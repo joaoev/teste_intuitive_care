@@ -118,4 +118,4 @@ Arquivos localizados na pasta `sql/`:
 
 Para detalhes sobre as escolhas técnicas (como o uso de `pandas` para ETL, estratégia de cache na API e validação de dados), que pedia no teste, consulte o arquivo:
 
-📄 [TRADEOFFS.md](https://www.google.com/search?q=./TRADEOFFS.md)
+📄 [TRADEOFFS.md](./TRADEOFFS.md)
