@@ -97,4 +97,5 @@ def run(consolidated_csv: Path, cadastro_csv: Path, output_csv: Path) -> Path:
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     out.to_csv(output_csv, index=False, encoding="utf-8-sig")
+
     return output_csv

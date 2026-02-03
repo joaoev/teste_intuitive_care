@@ -13,11 +13,11 @@ KEYWORDS = [
 
 def filter_despesas(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    # tenta achar uma coluna “de texto” provável
+    # tenta achar uma coluna de texto provável
     text_cols = [c for c in ["conta", "descricao",
                              "descricao_conta"] if c in df.columns]
     if not text_cols:
-        return df.iloc[0:0]  # vazio
+        return df.iloc[0:0]
 
     col = text_cols[0]
     s = df[col].astype(str).str.lower()

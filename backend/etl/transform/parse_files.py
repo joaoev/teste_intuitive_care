@@ -21,5 +21,4 @@ def read_any_table(path: Path) -> pd.DataFrame:
     try:
         return pd.read_csv(path, encoding=enc, sep=None, engine="python")
     except Exception:
-        # fallback comum em pt-br
         return pd.read_csv(path, encoding=enc, sep=";", engine="python")

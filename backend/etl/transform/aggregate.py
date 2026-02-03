@@ -29,4 +29,5 @@ def run(input_csv: Path, output_csv: Path) -> Path:
 
     output_csv.parent.mkdir(parents=True, exist_ok=True)
     grouped.to_csv(output_csv, index=False, encoding="utf-8-sig")
+
     return output_csv

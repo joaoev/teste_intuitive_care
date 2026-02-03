@@ -15,15 +15,13 @@ def slugify_col(name: str) -> str:
     """
     s = str(name).strip().lower()
     s = unicodedata.normalize("NFKD", s)
-    # remove acentos
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
-    s = re.sub(r"[^\w\s]", " ", s)  # tira pontuação
+    s = re.sub(r"[^\w\s]", " ", s)
     s = re.sub(r"\s+", "_", s)
     s = re.sub(r"_+", "_", s).strip("_")
     return s
 
 
-# Nomes canônicos que VOCÊ usa em todo o projeto
 CANONICAL_COLS = {
     "cnpj": [
         "cnpj", "nr_cnpj", "cnpj_operadora", "cnpj_da_operadora", "cnpj_prestador"
@@ -87,7 +85,6 @@ def normalize_dataframe_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, Dict[st
     original_cols = list(df.columns)
     normalized_cols = [slugify_col(c) for c in original_cols]
 
-    # aplica slugify temporário
     temp_map = dict(zip(original_cols, normalized_cols))
     df.rename(columns=temp_map, inplace=True)
 
