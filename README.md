@@ -1,81 +1,121 @@
 # Teste Intuitive Care
 
-__Autor__: João Evangelista
+![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat&logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=flat&logo=vue.js)
 
-- ETL em Python para download/processamento/normalização dos dados ANS
-- API em FastAPI para consulta das operadoras e despesas
-- Frontend em Vue 3 para listagem, busca, paginação, gráfico por UF e detalhes
-- Scripts SQL com estrutura e queries analíticas
+**Autor**: João Evangelista
 
-## Estrutura
+Solução completa para extração, transformação, carregamento (ETL) e visualização de dados da ANS (Agência Nacional de Saúde Suplementar). O projeto processa arquivos de demonstrações contábeis e disponibiliza uma interface interativa para consulta de despesas por operadora.
 
-- `backend/etl`: pipeline de dados
-- `backend/api`: servidor FastAPI
-- `frontend`: aplicação Vue
-- `sql`: DDL + queries analíticas
+## 🚀 Funcionalidades
 
-## 1) ETL (Python)
+- **ETL em Python**: Pipeline robusto para download, normalização e enriquecimento de dados da ANS.
+- **API RESTful**: Backend em FastAPI para servir dados paginados e estatísticas agregadas.
+- **Frontend Moderno**: Aplicação Vue 3 + PrimeVue com gráficos interativos e tabelas de busca.
+- **SQL Analítico**: Scripts prontos com estrutura de banco e queries de análise de performance.
+
+## 📂 Estrutura do Projeto
+
+- `backend/etl`: Módulos do pipeline de dados (extração, transformação, carga).
+- `backend/api`: Servidor da API.
+- `frontend`: Aplicação Web.
+- `sql`: DDL (Schema) e queries analíticas (SQL).
+
+---
+
+## 1) ETL (Pipeline de Dados)
+
+O pipeline baixa automaticamente os dados do FTP da ANS, trata inconsistências de encoding e gera arquivos CSV consolidados.
 
 ### Instalação
 
 ```bash
 cd backend
 python -m venv venv
+
+# Windows
 venv\Scripts\activate
+# Linux/Mac
+# source venv/bin/activate
+
 pip install -r requirements.txt
+
 ```
 
-### Execução completa
+### Execução Completa
+
+Para rodar o pipeline ponta a ponta (Download -> Extração -> Tratamento -> Consolidação):
 
 ```bash
 python -m etl.cli run --base-dir ./data
+
 ```
 
-Saídas principais em `backend/data/output`:
+**Saídas geradas em `backend/data/output`:**
 
-- `consolidado_despesas.csv`
-- `consolidado_enriquecido.csv`
-- `consolidado_validado.csv`
-- `despesas_agregadas.csv`
+* `consolidado_validado.csv`: Dados limpos e enriquecidos com o cadastro da operadora.
+* `despesas_agregadas.csv`: Dados sumarizados por operadora e UF.
 
-## 2) API (FastAPI)
+---
 
-### Subir servidor
+## 2) API (Backend)
+
+Servidor FastAPI que expõe os dados processados pelo ETL.
+
+### Inicialização
 
 ```bash
 cd backend
-venv\Scripts\activate
+# Certifique-se de que o venv está ativo
 uvicorn api.main:app --reload --port 8000
+
 ```
 
-### Rotas
+### Endpoints Principais
 
-- `GET /api/operadoras?page=1&limit=10&search=...`
-- `GET /api/operadoras/{cnpj}`
-- `GET /api/operadoras/{cnpj}/despesas`
-- `GET /api/estatisticas`
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `GET` | `/api/operadoras` | Lista operadoras com paginação e busca |
+| `GET` | `/api/operadoras/{cnpj}` | Detalhes de uma operadora específica |
+| `GET` | `/api/operadoras/{cnpj}/despesas` | Histórico trimestral de despesas |
+| `GET` | `/api/estatisticas` | Dashboard com totais e Top 5 (Cache de 5min) |
 
-## 3) Frontend (Vue 3 + Vite)
+---
+
+## 3) Frontend (Interface Web)
+
+Interface desenvolvida com Vue 3, TypeScript e Vite.
+
+### Configuração e Execução
 
 ```bash
 cd frontend
 npm install
 npm run dev
+
 ```
 
-App disponível em `http://localhost:5173`.
+Acesse a aplicação em: `http://localhost:5173`
 
-## 4) SQL
+---
 
-- Estrutura: `sql/schema.sql`
-- Consultas analíticas: `sql/queries.sql`
+## 4) SQL e Análise
 
-## Trade-offs adotados
+Arquivos localizados na pasta `sql/`:
 
-1. **Framework backend**: FastAPI, por produtividade, tipagem e documentação automática.
-2. **Paginação**: offset-based (`page`, `limit`), simples para o cenário inicial.
-3. **Estatísticas**: cache em memória por 5 minutos para reduzir custo da rota agregada.
-4. **Validação de dados**: marcamos inválidos (`Valido=false` + `ErrosValidacao`) em vez de excluir por padrão.
-5. **Join com cadastro**: `left join` por `RegistroANS`, preservando despesas sem match (`StatusCadastro=SEM_MATCH`).
+* **`sql/schema.sql`**: Definição das tabelas (`operadoras_cadastro`, `despesas_consolidadas`).
+* **`sql/queries.sql`**: Consultas analíticas solicitadas, incluindo:
+1. Top 5 operadoras com maior crescimento de despesas.
+2. Total e média de despesas por UF.
+3. Operadoras acima da média em múltiplos trimestres.
 
-Detalhamento completo das decisões: `TRADEOFFS.md`.
+
+
+---
+
+## 🛠️ Trade-offs e Decisões de Arquitetura
+
+Para detalhes sobre as escolhas técnicas (como o uso de `pandas` para ETL, estratégia de cache na API e validação de dados), que pedia no teste, consulte o arquivo:
+
+📄 [TRADEOFFS.md](https://www.google.com/search?q=./TRADEOFFS.md)

@@ -1,65 +1,65 @@
-# Decisoes Tecnicas e Trade-offs
+# Decisões Técnicas e Trade-offs
 
-Este documento registra as principais decisoes tecnicas do teste, com alternativas consideradas, escolha final e justificativa.
+Este documento registra as principais decisões técnicas do teste, com alternativas consideradas, escolha final e justificativa.
 
 ## Contexto
 
-- Objetivo: entregar um pipeline de dados (Python), API e interface web (Vue) com foco em clareza, robustez e tempo de entrega.
-- Base de dados: arquivos publicos da ANS com variacoes de estrutura entre periodos.
-- Prioridade: funcionamento ponta a ponta com tratamento de inconsistencias e boa documentacao.
+- **Objetivo**: entregar um pipeline de dados (Python), API e interface web (Vue) com foco em clareza, robustez e tempo de entrega.
+- **Base de dados**: arquivos públicos da ANS com variações de estrutura entre períodos.
+- **Prioridade**: funcionamento ponta a ponta com tratamento de inconsistências e boa documentação.
 
 ## 1) ETL e processamento de arquivos
 
-### 1.1 Processamento em memoria vs incremental
+### 1.1 Processamento em memória vs incremental
 
-- **Opcao A - em memoria**: carregar e transformar tudo em DataFrame de uma vez.
-- **Opcao B - incremental**: processar arquivo a arquivo e consolidar ao final.
-- **Escolha**: abordagem hibrida com processamento por arquivo e consolidacao final em DataFrame.
+- **Opção A - em memória**: carregar e transformar tudo em DataFrame de uma vez.
+- **Opção B - incremental**: processar arquivo a arquivo e consolidar ao final.
+- **Escolha**: abordagem híbrida com processamento por arquivo e consolidação final em DataFrame.
 - **Justificativa**:
-  - reduz risco de estouro de memoria em volumes maiores;
-  - mantem simplicidade de implementacao para o escopo do teste;
+  - reduz risco de estouro de memória em volumes maiores;
+  - mantém simplicidade de implementação para o escopo do teste;
   - facilita troubleshooting por etapa (download, extract, filter, consolidate).
 
-### 1.2 Identificacao de estrutura heterogenea (CSV/TXT/XLSX)
+### 1.2 Identificação de estrutura heterogênea (CSV/TXT/XLSX)
 
-- **Escolha**: deteccao automatica de encoding/separador + normalizacao de nomes de colunas (`slugify` + mapeamento canonico).
+- **Escolha**: detecção automática de encoding/separador + normalização de nomes de colunas (`slugify` + mapeamento canônico).
 - **Justificativa**:
   - arquivos da ANS variam em layout;
   - evita regras fixas por arquivo;
-  - melhora reuso para novos trimestres.
+  - melhora reúso para novos trimestres.
 
-### 1.3 Tratamento de inconsistencias no consolidado
+### 1.3 Tratamento de inconsistências no consolidado
 
 - Casos esperados:
-  - CNPJ duplicado com razoes sociais diferentes;
+  - CNPJ duplicado com razões sociais diferentes;
   - valores zerados/negativos;
   - datas/trimestres inconsistentes.
 - **Escolha aplicada**:
-  - consolidacao por `RegistroANS + Ano + Trimestre` para reduzir duplicidade operacional;
-  - validacao explicita com marcacao de erros (`Valido` e `ErrosValidacao`) em vez de descarte automatico;
-  - parse de trimestre por data de referencia com fallback seguro.
+  - consolidação por `RegistroANS + Ano + Trimestre` para reduzir duplicidade operacional;
+  - validação explícita com marcação de erros (`Valido` e `ErrosValidacao`) em vez de descarte automático;
+  - parse de trimestre por data de referência com *fallback* seguro.
 - **Justificativa**:
   - preserva rastreabilidade;
   - evita perda silenciosa de dados;
-  - permite politicas futuras (excluir, corrigir, auditar) sem reprocessar origem.
+  - permite políticas futuras (excluir, corrigir, auditar) sem reprocessar origem.
 
-## 2) Validacao e enriquecimento
+## 2) Validação e enriquecimento
 
-### 2.1 CNPJ invalido: excluir vs marcar
+### 2.1 CNPJ inválido: excluir vs marcar
 
-- **Opcao A**: excluir linhas invalidas.
-- **Opcao B**: manter e marcar.
-- **Escolha**: manter e marcar por padrao; opcionalmente excluir com `--reject-invalid`.
+- **Opção A**: excluir linhas inválidas.
+- **Opção B**: manter e marcar.
+- **Escolha**: manter e marcar por padrão; opcionalmente excluir com `--reject-invalid`.
 - **Justificativa**:
   - melhor para auditoria;
   - evita mascarar problemas de origem;
-  - da flexibilidade para consumidores diferentes.
+  - dá flexibilidade para consumidores diferentes.
 
 ### 2.2 Chave de join: CNPJ vs Registro ANS
 
-- **Opcao A**: join por CNPJ.
-- **Opcao B**: join por Registro ANS.
-- **Escolha**: join principal por `RegistroANS` (fonte contabil), retornando CNPJ e dados cadastrais.
+- **Opção A**: join por CNPJ.
+- **Opção B**: join por Registro ANS.
+- **Escolha**: join principal por `RegistroANS` (fonte contábil), retornando CNPJ e dados cadastrais.
 - **Justificativa**:
   - os arquivos contabilizados usam `REG_ANS` de forma mais consistente;
   - CNPJ pode estar ausente ou formatado de formas diferentes em fontes distintas.
@@ -68,29 +68,29 @@ Este documento registra as principais decisoes tecnicas do teste, com alternativ
 
 - **Escolha**: `left join` e coluna `StatusCadastro` (`OK`/`SEM_MATCH`).
 - **Justificativa**:
-  - nao perder despesas sem correspondencia;
+  - não perder despesas sem correspondência;
   - evidenciar lacunas de qualidade de dados.
 
 ## 3) Banco de dados (SQL)
 
 ### 3.1 Modelo: desnormalizado vs normalizado
 
-- **Opcao A**: tabela unica desnormalizada.
-- **Opcao B**: tabelas separadas (`cadastro`, `despesas_consolidadas`, `despesas_agregadas`).
+- **Opção A**: tabela única desnormalizada.
+- **Opção B**: tabelas separadas (`cadastro`, `despesas_consolidadas`, `despesas_agregadas`).
 - **Escolha**: modelo normalizado simples.
 - **Justificativa**:
-  - reduz redundancia;
-  - melhora manutencao de cadastro;
-  - suficiente para consultas analiticas propostas.
+  - reduz redundância;
+  - melhora manutenção de cadastro;
+  - suficiente para consultas analíticas propostas.
 
 ### 3.2 Tipos de dados
 
-- Valores monetarios: **DECIMAL(18,2)**.
-- Datas de analise: **Ano + Trimestre** (inteiros), evitando ambiguidades de parsing.
+- Valores monetários: **DECIMAL(18,2)**.
+- Datas de análise: **Ano + Trimestre** (inteiros), evitando ambiguidades de parsing.
 - Chaves textuais: `VARCHAR`.
 - **Justificativa**:
-  - DECIMAL preserva precisao financeira;
-  - ano/trimestre atende o dominio do problema com simplicidade.
+  - DECIMAL preserva precisão financeira;
+  - ano/trimestre atende o domínio do problema com simplicidade.
 
 ## 4) Backend da API
 
@@ -98,35 +98,35 @@ Este documento registra as principais decisoes tecnicas do teste, com alternativ
 
 - **Escolha**: FastAPI.
 - **Justificativa**:
-  - tipagem e validacao de parametros nativas;
-  - desenvolvimento rapido;
-  - melhor experiencia para evoluir documentacao e contratos.
+  - tipagem e validação de parâmetros nativas;
+  - desenvolvimento rápido;
+  - melhor experiência para evoluir documentação e contratos.
 
-### 4.2 Estrategia de paginacao
+### 4.2 Estratégia de paginação
 
-- **Opcao A**: offset/page-limit.
-- **Opcao B**: cursor/keyset.
+- **Opção A**: offset/page-limit.
+- **Opção B**: cursor/keyset.
 - **Escolha**: offset (`page`, `limit`).
 - **Justificativa**:
-  - implementacao direta;
+  - implementação direta;
   - atende volume atual;
   - mais simples para consumo no frontend.
 
-### 4.3 Cache de estatisticas
+### 4.3 Cache de estatísticas
 
-- **Opcao A**: calcular sempre.
-- **Opcao B**: cache temporario.
-- **Opcao C**: pre-calculo persistido.
-- **Escolha**: cache em memoria (TTL de 5 minutos).
+- **Opção A**: calcular sempre.
+- **Opção B**: cache temporário.
+- **Opção C**: pré-cálculo persistido.
+- **Escolha**: cache em memória (TTL de 5 minutos).
 - **Justificativa**:
-  - reduz custo de agregacao repetida;
+  - reduz custo de agregação repetida;
   - sem aumentar complexidade operacional.
 
 ### 4.4 Formato de resposta paginada
 
 - **Escolha**: retornar `data + metadados` (`total`, `page`, `limit`).
 - **Justificativa**:
-  - facilita UX de paginacao;
+  - facilita UX de paginação;
   - evita chamadas extras para contagem.
 
 ## 5) Frontend (Vue)
@@ -135,36 +135,35 @@ Este documento registra as principais decisoes tecnicas do teste, com alternativ
 
 - **Escolha**: busca no servidor (`search` na API).
 - **Justificativa**:
-  - escalavel para crescimento de dados;
+  - escalável para crescimento de dados;
   - evita carregar dataset completo no navegador.
 
 ### 5.2 Gerenciamento de estado
 
-- **Opcao A**: store global (Pinia/Vuex).
-- **Opcao B**: estado local + composables simples.
-- **Escolha**: estado local por pagina/componente.
+- **Opção A**: store global (Pinia/Vuex).
+- **Opção B**: estado local + composables simples.
+- **Escolha**: estado local por página/componente.
 - **Justificativa**:
   - menor complexidade para o escopo atual;
-  - fluxo de dados curto e previsivel.
+  - fluxo de dados curto e previsível.
 
 ### 5.3 Performance da tabela
 
-- **Escolha**: paginacao server-side (sem virtualizacao neste MVP).
+- **Escolha**: paginação server-side (sem virtualização neste MVP).
 - **Justificativa**:
   - evita render de listas grandes;
-  - atende requisitos com baixo custo de implementacao.
+  - atende requisitos com baixo custo de implementação.
 
 ### 5.4 Loading, erros e vazio
 
-- **Escolha**: estados explicitos por tela (`loading`, `error`, `empty`).
+- **Escolha**: estados explícitos por tela (`loading`, `error`, `empty`).
 - **Justificativa**:
-  - melhora clareza para usuario;
-  - facilita manutencao e testes.
+  - melhora clareza para usuário;
+  - facilita manutenção e testes.
 
-## 6) Limites conhecidos e proximos passos
+## 6) Limites conhecidos e próximos passos
 
-- Adicionar testes automatizados (unitarios e integracao) para ETL/API.
-- Parametrizar estrategia de validacao por ambiente (estrito vs tolerante).
-- Evoluir paginacao para keyset se volume e taxa de atualizacao crescerem.
-- Persistir estatisticas pre-calculadas para cenarios de alta concorrencia.
-
+- Adicionar testes automatizados (unitários e integração) para ETL/API.
+- Parametrizar estratégia de validação por ambiente (estrito vs tolerante).
+- Evoluir paginação para keyset se volume e taxa de atualização crescerem.
+- Persistir estatísticas pré-calculadas para cenários de alta concorrência.
