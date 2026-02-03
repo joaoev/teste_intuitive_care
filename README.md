@@ -1,8 +1,10 @@
 # Teste Intuitive Care
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=flat&logo=python)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat&logo=fastapi)
-![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=flat&logo=vue.js)
+![Python](https://img.shields.io/badge/python-3670A0?logo=python&logoColor=ffdd54)
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)
+![Vue.js](https://img.shields.io/badge/vuejs-%2335495e.svg?logo=vuedotjs&logoColor=%234FC08D)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?logo=postgresql&logoColor=white)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?logo=vite&logoColor=white)
 
 **Autor**: João Evangelista
 
